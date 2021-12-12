@@ -41,6 +41,16 @@ public class HelloRes {
 		return "HelloWorldaaaa";
 	}
 	
+	@RequestMapping(method = RequestMethod.GET, value = "/public")
+	public String HelloWorld2() {
+		return "HelloWorldaaaa public";
+	}
+	
+	@RequestMapping(method = RequestMethod.GET, value = "/public2")
+	public String HelloWorld3() {
+		return "HelloWorldaaaa public";
+	}
+	
 	@RequestMapping(method = RequestMethod.POST, value = "/atho")
 	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthonticationRequest authenticationRequest) throws Exception{
 		try {
@@ -72,7 +82,7 @@ public class HelloRes {
 		
 		if(token != null && token.startsWith(data.getRefreshTokenHead())) {
 			String refresh_jwt = token.substring(7);
-			String username = jwtTokenUtill.extractUsername(refresh_jwt);
+			String username = (String) jwtTokenUtill.extractUsername(refresh_jwt).get("data");
 			if(username != null) {
 				
 				final UserDetails userDetails = userDetailsService.loadUserByUsername(username);

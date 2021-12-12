@@ -18,41 +18,64 @@ public class JwtUtil {
 	
 	private String SECRET_KEY = "test_2020";
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public Map<String,Object> extractUsername(String token) {
+    	Claims temp = extractAllClaims(token);
+    	if(temp.containsKey("MyCustomError")) {
+    		return temp;
+    	}else {
+    		return Map.of("data", extractClaim(token, Claims::getSubject));
+    	}
     }
 
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+    public Map<String,Object> extractExpiration(String token) {
+    	Claims temp = extractAllClaims(token);
+    	if(temp.containsKey("MyCustomError")) {
+    		return temp;
+    	}else {
+    		return Map.of("data", extractClaim(token, Claims::getExpiration));
+    	}
     }
     
-    public String getId(String token) {
-        return extractClaim(token, Claims::getId);   /**  :: mean => make object from Claims class and call getId method **/
+    public Map<String,Object> getId(String token) {
+    	Claims temp = extractAllClaims(token);
+    	if(temp.containsKey("MyCustomError")) {
+    		return temp;
+    	}else {
+    		return Map.of("data", extractClaim(token, Claims::getId)); /**  :: mean => make object from Claims class and call getId method **/
+    	}
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
-    private Claims extractAllClaims(String token) {
+
+    public <T> T extractClaim(Claims claims, Function<Claims, T> claimsResolver) {
+        return claimsResolver.apply(claims);
+    }
+
+	private Claims extractAllClaims(String token) {
     	try {
-        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
+    		return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
     	}catch(ExpiredJwtException e) {
-    		System.out.print(e.getMessage()+"1234");
-    		return null;
+    		return Jwts.claims(Map.of("data", "Token Exp","MyCustomError",true));
     	}catch(Exception e) {
-    		System.out.print(e.getMessage()+"7896");
-    		return null;
+    		return Jwts.claims(Map.of("data", e.getMessage(),"MyCustomError",true));
     	}
     }
 
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+	public Boolean isTokenExpired(String token) {
+		Map<String, Object> dataSet = extractExpiration(token);
+		if(dataSet.containsKey("MyCustomError")) {
+			return true;
+		}else {
+			return (((Date) dataSet.get("data")).before(new Date()));
+		}
     }
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userDetails.getUsername(),(1000 * 60 * 60* 1)); // valid only 1h
+        return createToken(claims, userDetails.getUsername(),(1000 * 60 )); // valid only 1h
     }
     
     public String generateRefreshToken(UserDetails userDetails) {
@@ -68,8 +91,12 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    	Map<String, Object> dataSet = extractUsername(token);
+		if(dataSet.containsKey("MyCustomError")) {
+			return false;
+		}else {
+	        return (((String)dataSet.get("data")).equals(userDetails.getUsername()) && !isTokenExpired(token));
+		}
     }
 
 }

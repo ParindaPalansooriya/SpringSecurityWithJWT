@@ -60,6 +60,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		.authorizeRequests()
 		.antMatchers("/user").hasRole("USER")
 		.antMatchers("/public").authenticated()
+		.antMatchers("/public2").permitAll()
 		.antMatchers("/atho").permitAll()
 		.anyRequest().authenticated().and()
 		.exceptionHandling().accessDeniedHandler(new AccessDeniedHandler() {
